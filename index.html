@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MinVote - Home</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -10,36 +11,50 @@
         <a href="index.html" class="logo elms-font">MinVote</a>
         <ul class="nav-links">
             <li><a href="dashboard.html">대시보드</a></li>
-            <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="#" onclick="checkAuthAndGo('survey-create.html')">설문조사</a></li>
             <li><a href="join.html">설문참여</a></li>
         </ul>
         <div id="auth-section"></div>
     </nav>
 
     <main style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 80vh; text-align: center; padding: 0 20px;">
-        <h1 class="elms-font" style="font-size: 4.5rem; letter-spacing: -2px;">MinVote</h1>
-        <p style="font-size: 1.2rem; color: #888; margin-top: 10px;">세련된 방식으로 의견을 모으세요.</p>
-        <div style="margin-top: 40px; display: flex; gap: 15px;">
-            <a href="survey-create.html" class="btn-pill btn-black" style="padding: 15px 40px;">시작하기</a>
-            <a href="join.html" class="btn-pill" style="padding: 15px 40px;">설문 참여</a>
+        <h1 class="elms-font" style="font-size: 4rem; letter-spacing: -2px; line-height: 1.1;">MinVote</h1>
+        <p style="font-size: 1.1rem; color: #888; margin-top: 15px;">세련된 전자투표 및 설문조사 플랫폼</p>
+        <div style="margin-top: 40px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn-pill btn-black" onclick="checkAuthAndGo('survey-create.html')">설문 만들기</button>
+            <a href="join.html" class="btn-pill">참여하기</a>
         </div>
     </main>
 
     <div id="loginModal" class="custom-modal">
         <div class="modal-box">
-            <h3 class="elms-font" style="margin-bottom: 20px;">Login</h3>
-            <input type="text" id="userId" placeholder="아이디">
-            <input type="password" id="userPw" placeholder="비밀번호">
+            <h2 class="elms-font" style="margin-bottom:20px; font-size:2rem;">Login</h2>
+            <input type="text" id="userId" placeholder="ID">
+            <input type="password" id="userPw" placeholder="Password">
             <div class="modal-btns">
-                <button class="btn-pill btn-black" style="width: 100%;" onclick="handleLogin()">로그인</button>
+                <button class="btn-pill" onclick="Modal.toggleLogin(false)">취소</button>
+                <button class="btn-pill btn-black" onclick="handleLogin()">로그인</button>
             </div>
-            <p style="margin-top:20px; cursor:pointer; font-size:0.8rem; color:#aaa;" onclick="toggleLoginModal(false)">닫기</p>
+        </div>
+    </div>
+    
+    <div id="globalModal" class="custom-modal">
+        <div class="modal-box">
+            <h3 id="modalTitle"></h3>
+            <p id="modalMsg" style="color:#666; margin:15px 0;"></p>
+            <div id="modalBtns" class="modal-btns"></div>
         </div>
     </div>
 
     <script src="modal.js"></script>
     <script>
-        function toggleLoginModal(show) {
+        // 네비게이션 로그인 체크
+        function checkAuthAndGo(url) {
+            if(localStorage.getItem('minvote_user')) location.href = url;
+            else Modal.toggleLogin(true);
+        }
+
+        Modal.toggleLogin = function(show) {
             const m = document.getElementById('loginModal');
             if(show) { m.style.display = 'flex'; setTimeout(()=>m.classList.add('active'),10); }
             else { m.classList.remove('active'); setTimeout(()=>m.style.display='none',300); }
@@ -48,16 +63,11 @@
         async function handleLogin() {
             const id = document.getElementById('userId').value;
             const pw = document.getElementById('userPw').value;
-            const res = await fetch("https://jaewondev2.pythonanywhere.com/check-access", {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id, password: pw })
-            });
-            const data = await res.json();
-            if(data.success) {
+            // 간단 인증 (백엔드 연동 시 fetch 사용)
+            if(id) {
                 localStorage.setItem('minvote_user', id);
                 location.reload();
-            } else { await Modal.alert("로그인 실패", "아이디 또는 비밀번호가 틀렸습니다."); }
+            } else { await Modal.alert("로그인 실패", "아이디를 입력해주세요."); }
         }
 
         const user = localStorage.getItem('minvote_user');
@@ -65,7 +75,7 @@
         if(user) {
             authSec.innerHTML = `<span style="font-weight:700; margin-right:15px;">${user}님</span><button class="btn-pill" onclick="localStorage.removeItem('minvote_user'); location.reload();">Logout</button>`;
         } else {
-            authSec.innerHTML = `<button class="btn-pill" onclick="toggleLoginModal(true)">Login</button>`;
+            authSec.innerHTML = `<button class="btn-pill" onclick="Modal.toggleLogin(true)">Login</button>`;
         }
     </script>
 </body>

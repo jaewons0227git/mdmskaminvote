@@ -2,9 +2,11 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MinVote - Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -18,19 +20,33 @@
     </nav>
 
     <div style="padding: 60px 8%;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 40px;">
-            <h1 class="elms-font" style="font-size: 2.5rem;">My Dashboard</h1>
-            <a href="survey-create.html" class="btn-pill btn-black">+ 새 설문 만들기</a>
+        <div style="display:flex; flex-direction: column; gap: 20px; margin-bottom: 40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1 class="elms-font" style="font-size: 2.5rem;">My Dashboard</h1>
+                <a href="survey-create.html" class="btn-pill btn-black" style="width:auto;">+ 새 만들기</a>
+            </div>
         </div>
         <div id="survey-list"></div>
     </div>
 
     <div id="statsModal" class="custom-modal">
         <div class="modal-box" style="max-width: 700px; text-align: left; max-height: 80vh; overflow-y: auto;">
-            <h3 id="statsTitle" style="font-size:1.5rem; margin-bottom:10px;">설문 통계</h3>
+            <h3 id="statsTitle" style="font-size:1.5rem; margin-bottom:10px;">결과 보기</h3>
             <p id="totalCount" style="color:#666; margin-bottom:20px;"></p>
             <div id="statsContent"></div>
-            <button class="btn-pill btn-black" style="width:100%; margin-top:30px;" onclick="closeStats()">닫기</button>
+            <button class="btn-pill btn-black" style="width:100%; margin-top:30px;" onclick="closeModal('statsModal')">닫기</button>
+        </div>
+    </div>
+
+    <div id="codesModal" class="custom-modal">
+        <div class="modal-box" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <h3 class="elms-font" style="margin-bottom:15px;">Access Codes</h3>
+            <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">
+                빨간색 코드는 이미 투표에 사용된 코드입니다.<br>
+                검은색(초록색) 코드는 아직 사용 가능한 코드입니다.
+            </p>
+            <div id="codeListContent" style="text-align:left; background:#f9f9f9; padding:20px; border-radius:15px; border:1px solid #eee;"></div>
+            <button class="btn-pill btn-black" style="width:100%; margin-top:20px;" onclick="closeModal('codesModal')">닫기</button>
         </div>
     </div>
 
@@ -39,50 +55,107 @@
         const user = localStorage.getItem('minvote_user');
         if(!user) location.href = 'index.html';
 
+        let mySurveys = [];
+
         async function load() {
             const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-dashboard?id=${user}`);
             const data = await res.json();
+            mySurveys = data.surveys || [];
             const list = document.getElementById('survey-list');
             
-            if(data.surveys.length === 0) {
-                list.innerHTML = `<div style="text-align:center; color:#888; padding:50px;">아직 생성된 설문이 없습니다.</div>`;
+            if(mySurveys.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:#888; padding:50px;">생성된 설문이 없습니다.</div>`;
                 return;
             }
 
-            list.innerHTML = data.surveys.map(s => `
+            list.innerHTML = mySurveys.map(s => {
+                let typeLabel = '설문조사';
+                if(s.type === 'vote') typeLabel = '전자투표';
+                else if(s.type === 'sec_vote') typeLabel = '보안 투표';
+                else if(s.type === 'election') typeLabel = '선거';
+
+                const isSecure = (s.type === 'sec_vote' || s.type === 'election');
+                
+                // [추가] 링크 복사 또는 엑셀 다운로드 버튼
+                let shareBtn = '';
+                if(isSecure) {
+                    shareBtn = `<button class="btn-pill" onclick="downloadCodes('${s.code}')" style="color:#27ae60; border-color:#27ae60;">📊 엑셀</button>`;
+                } else {
+                    shareBtn = `<button class="btn-pill" onclick="copyLink('${s.code}')" style="color:#2980b9; border-color:#2980b9;">🔗 링크</button>`;
+                }
+
+                return `
                 <div class="dash-card">
                     <div>
-                        <div style="margin-bottom:8px;">
+                        <div style="margin-bottom:8px; display:flex; gap:5px;">
                             <span style="font-size:0.75rem; color:${s.status === 'open' ? '#2ecc71' : '#e74c3c'}; font-weight:700; border:1px solid ${s.status === 'open' ? '#2ecc71' : '#e74c3c'}; padding:2px 8px; border-radius:10px;">
                                 ${s.status === 'open' ? '진행중' : '마감됨'}
                             </span>
+                            <span style="font-size:0.75rem; color:#000; border:1px solid #000; padding:2px 8px; border-radius:10px;">${typeLabel}</span>
                         </div>
                         <h3 style="margin:0 0 5px 0; font-size:1.5rem;">${s.title}</h3>
-                        <p style="color:#888; font-size:0.95rem;">참여 코드: <strong style="color:#000; font-size:1.1rem;">${s.code}</strong></p>
+                        <p style="color:#888; font-size:0.95rem;">코드: <strong>${s.code}</strong></p>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn-pill" onclick="showStats('${s.code}', '${s.title}')">통계</button>
-                        <button class="btn-pill" onclick="location.href='survey-create.html?edit=${s.code}'">수정</button>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        ${shareBtn}
+                        ${isSecure ? `<button class="btn-pill" onclick="showCodes('${s.code}')">코드 관리</button>` : ''}
+                        <button class="btn-pill" onclick="showStats('${s.code}', '${s.title}', '${s.type}')">결과</button>
                         <button class="btn-pill" onclick="toggleStatus('${s.code}')">${s.status === 'open' ? '마감' : '재개'}</button>
                         <button class="btn-pill" onclick="deleteS('${s.code}')" style="color:#e74c3c; border-color:#e74c3c;">삭제</button>
                     </div>
+                </div>`;
+            }).join('');
+        }
+
+        function copyLink(code) {
+            const link = `${window.location.origin}/join.html?code=${code}`;
+            navigator.clipboard.writeText(link).then(() => alert("참여 링크가 복사되었습니다!"));
+        }
+
+        function downloadCodes(code) {
+            const s = mySurveys.find(x => x.code === code);
+            if(!s || !s.access_codes) return alert("데이터가 없습니다.");
+            
+            const sheetData = s.access_codes.map((c, idx) => ({ 
+                "번호": idx + 1, 
+                "전체코드": c.code,
+                "사용여부": c.used ? "사용됨" : "미사용"
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(sheetData);
+            ws['!cols'] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }];
+            XLSX.utils.book_append_sheet(wb, ws, "Codes");
+            XLSX.writeFile(wb, `Codes_${code}.xlsx`);
+        }
+
+        function showCodes(code) {
+            const s = mySurveys.find(x => x.code === code);
+            if(!s || !s.access_codes) return;
+            
+            const list = document.getElementById('codeListContent');
+            list.innerHTML = s.access_codes.map(c => `
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; color:${c.used ? '#e74c3c' : '#2ecc71'}; font-weight:${c.used ? 'bold' : 'normal'};">
+                    <span>${c.code}</span>
+                    <span>${c.used ? '사용됨 (Used)' : '사용 가능'}</span>
                 </div>
             `).join('');
+            
+            const m = document.getElementById('codesModal');
+            m.style.display = 'flex'; setTimeout(()=>m.classList.add('active'),10);
         }
 
         async function toggleStatus(code) {
-            if(await Modal.confirm("상태 변경", "설문 상태를 변경하시겠습니까?")) {
-                const res = await fetch("https://jaewondev4.pythonanywhere.com/toggle-status", {
+            if(await Modal.confirm("상태 변경", "상태를 변경하시겠습니까?")) {
+                await fetch("https://jaewondev4.pythonanywhere.com/toggle-status", {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ id: user, code })
                 });
-                const data = await res.json();
-                if(data.success) { load(); await Modal.alert("성공", "상태가 업데이트되었습니다."); }
+                load();
             }
         }
 
         async function deleteS(code) {
-            if(await Modal.confirm("삭제", "정말 삭제하시겠습니까? 응답 데이터가 영구적으로 삭제됩니다.")) {
+            if(await Modal.confirm("삭제", "정말 삭제하시겠습니까? 모든 데이터가 영구 삭제됩니다.")) {
                 await fetch("https://jaewondev4.pythonanywhere.com/delete-survey", {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ id: user, code })
@@ -91,32 +164,66 @@
             }
         }
 
-        async function showStats(code, title) {
+        async function showStats(code, title, type) {
             const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-stats?code=${code}&id=${user}`);
             const result = await res.json();
+            
             document.getElementById('statsTitle').innerText = title;
-            document.getElementById('totalCount').innerText = `총 응답 수: ${result.total}명`;
+            document.getElementById('totalCount').innerText = `총 참여 수: ${result.total}명`;
             const content = document.getElementById('statsContent');
             content.innerHTML = '';
             
+            const isVoteType = ['vote', 'sec_vote', 'election'].includes(type);
+
             result.stats.forEach((s, idx) => {
                 const div = document.createElement('div');
-                div.style.marginTop = '25px';
-                div.innerHTML = `<strong style="font-size:1.1rem;">Q${idx+1}. ${s.title}</strong>`;
-                if(s.type === 'choice') {
+                div.style.marginTop = '30px';
+                
+                const titleHtml = isVoteType ? 
+                    `<strong style="font-size:1.2rem; display:block; margin-bottom:15px; border-left:4px solid #000; padding-left:10px;">${s.title}</strong>` : 
+                    `<strong style="font-size:1.1rem; display:block; margin-bottom:10px;">Q${idx+1}. ${s.title}</strong>`;
+                
+                div.innerHTML = titleHtml;
+                
+                if(isVoteType) {
+                    let maxVote = -1;
+                    Object.values(s.data).forEach(v => { if(v > maxVote) maxVote = v; });
+
+                    Object.entries(s.data).forEach(([opt, count]) => {
+                        const isWinner = (count === maxVote && count > 0);
+                        const percent = result.total > 0 ? (count / result.total * 100).toFixed(1) : 0;
+                        const isElection = type === 'election';
+                        
+                        div.innerHTML += `
+                            <div class="vote-result-item">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span>
+                                        ${isWinner && isElection ? '<span class="winner-badge">당선인</span>' : ''}
+                                        ${isWinner && !isElection ? '<span class="winner-badge">최다 득표</span>' : ''}
+                                        ${opt}
+                                    </span>
+                                    <span style="font-weight:bold;">${count}표 (${percent}%)</span>
+                                </div>
+                                <div class="vote-bar-bg">
+                                    <div class="vote-bar-fill ${isWinner ? 'winner' : ''}" style="width:${percent}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                } else if(s.type === 'choice') {
                     const canvas = document.createElement('canvas');
-                    canvas.style.marginTop = "10px";
                     div.appendChild(canvas);
                     new Chart(canvas, { 
                         type: 'bar', 
                         data: { 
                             labels: Object.keys(s.data), 
-                            datasets: [{ label: '득표 수', data: Object.values(s.data), backgroundColor: '#111', borderRadius: 5 }] 
+                            datasets: [{ label: '응답 수', data: Object.values(s.data), backgroundColor: '#000', borderRadius: 4 }] 
                         },
                         options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                     });
                 } else {
-                    div.innerHTML += `<div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-top:10px; font-size:0.9rem; line-height:1.6; max-height:200px; overflow-y:auto;">${s.data.length ? s.data.join('<hr style="border:0; border-top:1px solid #eee; margin:10px 0;">') : '<span style="color:#aaa">응답 없음</span>'}</div>`;
+                    div.innerHTML += `<div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-top:10px; font-size:0.9rem; max-height:150px; overflow-y:auto;">${s.data.length ? s.data.join('<hr style="border:0; border-top:1px solid #eee; margin:10px 0;">') : '응답 없음'}</div>`;
                 }
                 content.appendChild(div);
             });
@@ -124,8 +231,8 @@
             m.style.display = 'flex'; setTimeout(()=>m.classList.add('active'),10);
         }
 
-        function closeStats() {
-            const m = document.getElementById('statsModal');
+        function closeModal(id) {
+            const m = document.getElementById(id);
             m.classList.remove('active'); setTimeout(()=>m.style.display='none',300);
         }
 

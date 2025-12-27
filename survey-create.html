@@ -2,50 +2,81 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>MinVote - 설문 관리</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinVote - 만들기</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
         <a href="index.html" class="logo elms-font">MinVote</a>
         <ul class="nav-links">
             <li><a href="dashboard.html">대시보드</a></li>
-            <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="#" onclick="checkAuthAndGo('survey-create.html')">설문조사</a></li>
             <li><a href="join.html">설문참여</a></li>
         </ul>
         <div id="auth-section"></div>
     </nav>
 
-    <div style="max-width: 800px; margin: 60px auto; padding: 0 20px;">
-        <h2 id="pageTitle" class="elms-font" style="font-size: 2.5rem; margin-bottom: 10px;">Create Survey</h2>
-        <p style="color:#888; margin-bottom:40px;">문항을 드래그하여 순서를 바꿀 수 있습니다.</p>
+    <div style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+        <h2 class="elms-font" style="font-size: 2.5rem; margin-bottom: 20px;">Create New</h2>
         
-        <input type="text" id="surveyTitle" placeholder="설문 제목을 입력하세요" style="font-size: 1.8rem; border:none; border-bottom: 2px solid #eee; background:none; border-radius:0; margin-bottom:40px;">
+        <div style="background:#fff; border:1px solid #000; border-radius:20px; padding:25px; margin-bottom:30px;">
+            <label style="font-weight:bold; display:block; margin-bottom:5px;">유형 선택</label>
+            <select id="sType" onchange="handleTypeChange()" style="margin-bottom:15px;">
+                <option value="survey">설문조사 (자유형/공개코드)</option>
+                <option value="vote">전자투표 (객관식/공개코드)</option>
+                <option value="sec_vote">보안 전자투표 (객관식/개별보안코드)</option>
+                <option value="election">선거 (당선인표시/개별보안코드)</option>
+            </select>
+
+            <div id="voterCountBox" style="display:none;">
+                <label style="font-weight:bold; display:block; margin-bottom:5px;">투표 인원 수 (필수)</label>
+                <input type="number" id="voterCount" placeholder="예: 30" min="1">
+                <p style="font-size:0.8rem; color:#888; margin-top:5px;">인원 수 만큼의 1회용 보안 코드가 생성됩니다.</p>
+            </div>
+            
+            <label style="font-weight:bold; display:block; margin-top:15px; margin-bottom:5px;">제목</label>
+            <input type="text" id="surveyTitle" placeholder="제목을 입력하세요" style="margin-top:0;">
+        </div>
         
         <div id="questions-list"></div>
 
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn-pill" onclick="addQuestion('text')">+ 단답형 추가</button>
+            <button class="btn-pill" id="btnAddText" onclick="addQuestion('text')">+ 단답형 추가</button>
             <button class="btn-pill" onclick="addQuestion('choice')">+ 객관식 추가</button>
         </div>
 
-        <button class="btn-pill btn-black" style="width: 100%; margin-top: 50px; padding: 20px;" onclick="saveSurvey()">설문 저장하기</button>
+        <button class="btn-pill btn-black" style="width: 100%; margin-top: 50px; padding: 20px;" onclick="saveSurvey()">생성하기</button>
     </div>
 
     <div id="successModal" class="custom-modal">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width:600px;">
             <h3 class="elms-font" style="font-size:2rem; margin-bottom:10px;">Success!</h3>
-            <p style="color:#666; margin-bottom:20px;">설문이 생성되었습니다.<br>참여자들에게 아래 코드를 공유하세요.</p>
+            <p id="successMsg" style="color:#666; margin-bottom:20px;">참여 코드가 생성되었습니다.</p>
             
-            <div style="background:#f5f5f5; padding:20px; border-radius:15px; margin-bottom:20px; border:2px dashed #ccc;">
-                <span id="createdCode" style="font-size:2.5rem; font-weight:800; letter-spacing: 5px;"></span>
+            <div id="codeDisplayArea" style="background:#f5f5f5; padding:20px; border-radius:15px; margin-bottom:20px; border:2px dashed #bbb; max-height:200px; overflow-y:auto; word-break:break-all;"></div>
+            
+            <div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px; flex-wrap:wrap;">
+                <button class="btn-pill" onclick="copyCode()">📋 코드/링크 복사</button>
+                <button class="btn-pill" id="btnExcel" style="display:none; color:#27ae60; border-color:#27ae60;" onclick="downloadExcel()">📊 엑셀 저장</button>
             </div>
-            
-            <button class="btn-pill" style="margin-bottom:20px;" onclick="copyCode()">📋 코드 복사하기</button>
 
             <div class="modal-btns">
-                <button class="btn-pill btn-black" style="width:100%" onclick="location.href='dashboard.html'">확인 (대시보드로 이동)</button>
+                <button class="btn-pill btn-black" style="width:100%" onclick="location.href='dashboard.html'">확인</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loginModal" class="custom-modal">
+        <div class="modal-box">
+            <h2 class="elms-font" style="margin-bottom:20px; font-size:2rem;">Login</h2>
+            <input type="text" id="userId" placeholder="ID">
+            <input type="password" id="userPw" placeholder="Password">
+            <div class="modal-btns">
+                <button class="btn-pill" onclick="Modal.toggleLogin(false)">취소</button>
+                <button class="btn-pill btn-black" onclick="handleLogin()">로그인</button>
             </div>
         </div>
     </div>
@@ -53,43 +84,95 @@
     <script src="modal.js"></script>
     <script>
         let questions = [];
+        let generatedTokens = [];
+        let shareLink = "";
         const user = localStorage.getItem('minvote_user');
-        const urlParams = new URLSearchParams(window.location.search);
-        const editCode = urlParams.get('edit');
-
-        // 드래그 앤 드롭
         const el = document.getElementById('questions-list');
-        Sortable.create(el, {
-            animation: 150, handle: '.q-card',
-            onEnd: function() {
-                const newOrder = [];
-                document.querySelectorAll('.q-card').forEach(card => newOrder.push(questions[card.dataset.index]));
-                questions = newOrder; render();
-            }
-        });
+        Sortable.create(el, { animation: 150, handle: '.q-card', onEnd: () => {
+            const newOrder = [];
+            document.querySelectorAll('.q-card').forEach(c => newOrder.push(questions[c.dataset.index]));
+            questions = newOrder; render();
+        }});
 
-        window.onload = async () => {
-            if(!user) location.href = 'index.html';
-            if(editCode) {
-                document.getElementById('pageTitle').innerText = "Edit Survey";
-                const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-survey?code=${editCode}`);
-                const data = await res.json();
-                if(data.success) {
-                    document.getElementById('surveyTitle').value = data.survey.title;
-                    questions = data.survey.questions;
-                    render();
-                }
+        window.onload = () => {
+            const authSec = document.getElementById('auth-section');
+            if(user) {
+                authSec.innerHTML = `<span style="font-weight:700; margin-right:10px;">${user}님</span>`;
+            } else {
+                authSec.innerHTML = `<button class="btn-pill" onclick="Modal.toggleLogin(true)">Login</button>`;
             }
-            document.getElementById('auth-section').innerHTML = `<span style="font-weight:700;">${user}님</span>`;
+            handleTypeChange();
         };
 
-        function addQuestion(type) {
-            questions.push({ type, title: '', options: type === 'choice' ? ['', ''] : [], required: false });
+        function checkAuthAndGo(url) {
+            if(localStorage.getItem('minvote_user')) location.href = url;
+            else Modal.toggleLogin(true);
+        }
+        
+        async function handleLogin() {
+            const id = document.getElementById('userId').value;
+            const pw = document.getElementById('userPw').value;
+            if(id && pw) { 
+                localStorage.setItem('minvote_user', id);
+                location.reload();
+            }
+        }
+        Modal.toggleLogin = function(show) {
+             const m = document.getElementById('loginModal');
+             if(show) { m.style.display='flex'; setTimeout(()=>m.classList.add('active'),10); }
+             else { m.classList.remove('active'); setTimeout(()=>m.style.display='none',300); }
+        }
+
+        function handleTypeChange() {
+            const type = document.getElementById('sType').value;
+            const isVote = ['vote', 'sec_vote', 'election'].includes(type);
+            const isSecure = ['sec_vote', 'election'].includes(type);
+
+            document.getElementById('btnAddText').style.display = isVote ? 'none' : 'inline-block';
+            document.getElementById('voterCountBox').style.display = isSecure ? 'block' : 'none';
+
+            // 질문 유형 필터 및 필수항목 처리
+            if(isVote) {
+                questions = questions.filter(q => q.type === 'choice');
+            }
+            
+            // 보안 투표/선거는 강제로 required=true, 그 외는 기존 값 유지하거나 기본 false
+            questions.forEach(q => {
+                if (isSecure) q.required = true;
+            });
+            
             render();
+        }
+
+        function addQuestion(type) {
+            const sType = document.getElementById('sType').value;
+            const isSecure = ['sec_vote', 'election'].includes(sType);
+            
+            questions.push({ 
+                type, 
+                title: '', 
+                options: type === 'choice' ? ['', ''] : [], 
+                required: isSecure ? true : false // 보안투표면 기본 true, 아니면 false
+            });
+            render();
+        }
+
+        function updateOption(qIdx, optIdx, val) { questions[qIdx].options[optIdx] = val; }
+        function addOption(qIdx) { questions[qIdx].options.push(''); render(); }
+        function deleteOption(qIdx, optIdx) {
+            if(questions[qIdx].options.length <= 1) return alert("최소 1개의 옵션이 필요합니다.");
+            questions[qIdx].options.splice(optIdx, 1);
+            render();
+        }
+        function toggleRequired(qIdx, val) {
+            questions[qIdx].required = val;
         }
 
         function render() {
             const list = document.getElementById('questions-list');
+            const sType = document.getElementById('sType').value;
+            const isSecure = ['sec_vote', 'election'].includes(sType);
+
             list.innerHTML = '';
             questions.forEach((q, i) => {
                 const div = document.createElement('div');
@@ -98,62 +181,92 @@
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-size:0.8rem; color:#888; font-weight:bold;">☰ 문항 ${i+1}</span>
-                        <button onclick="removeQuestion(${i})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-size:0.8rem;">삭제</button>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="font-size:0.8rem; cursor:pointer;">
+                                <input type="checkbox" ${q.required ? 'checked' : ''} 
+                                    ${isSecure ? 'disabled' : ''} 
+                                    onchange="toggleRequired(${i}, this.checked)"> 필수 응답
+                            </label>
+                            <button onclick="removeQuestion(${i})" style="color:#e74c3c; border:none; background:none; cursor:pointer;">삭제</button>
+                        </div>
                     </div>
                     <input type="text" placeholder="질문을 입력하세요" value="${q.title}" oninput="questions[${i}].title=this.value">
                     ${q.type === 'choice' ? `
-                        <div style="margin-top:10px; padding-left:20px;">
+                        <div style="margin-top:10px; padding-left:10px;">
                             ${q.options.map((opt, oi) => `
-                                <input type="text" value="${opt}" oninput="questions[${i}].options[${oi}]=this.value" style="width:80%; font-size:0.85rem; margin-bottom:5px;" placeholder="옵션 ${oi+1}">
+                                <div style="display:flex; gap:5px; align-items:center; margin-bottom:5px;">
+                                    <input type="text" value="${opt}" oninput="updateOption(${i}, ${oi}, this.value)" style="flex:1; font-size:0.85rem;" placeholder="옵션 ${oi+1}">
+                                    <button class="btn-pill" style="padding:5px 10px; font-size:0.7rem; color:#e74c3c; border-color:#ddd;" onclick="deleteOption(${i}, ${oi})">-</button>
+                                </div>
                             `).join('')}
-                            <button class="btn-pill" style="font-size:0.7rem; padding:4px 12px; margin-top:5px;" onclick="questions[${i}].options.push(''); render()">+ 옵션 추가</button>
+                            <button class="btn-pill" style="font-size:0.7rem; padding:4px 12px; margin-top:5px;" onclick="addOption(${i})">+ 옵션 추가</button>
                         </div>
                     ` : ''}
-                    <div style="margin-top:15px; border-top:1px solid #f9f9f9; padding-top:10px;">
-                        <label style="font-size:0.85rem; cursor:pointer;">
-                            <input type="checkbox" ${q.required ? 'checked' : ''} onchange="questions[${i}].required=this.checked"> 필수 답변 설정
-                        </label>
-                    </div>
                 `;
                 list.appendChild(div);
             });
         }
-
-        function removeQuestion(i) {
-            questions.splice(i, 1);
-            render();
-        }
+        function removeQuestion(i) { questions.splice(i, 1); render(); }
 
         async function saveSurvey() {
-            const title = document.getElementById('surveyTitle').value;
-            if(!title) return Modal.alert("오류", "설문 제목을 입력해주세요.");
-            if(questions.length === 0) return Modal.alert("오류", "최소 1개 이상의 질문을 생성해주세요.");
+            if(!user) return Modal.alert("오류", "로그인이 필요합니다.");
+            const title = document.getElementById('surveyTitle').value.trim();
+            const type = document.getElementById('sType').value;
+            const voterCount = document.getElementById('voterCount').value;
+
+            if(!title) return Modal.alert("오류", "제목을 입력해주세요.");
+            if(questions.length === 0) return Modal.alert("오류", "질문을 추가해주세요.");
+            
+            // 보안 투표인 경우 강제로 required True 재확인
+            if(['sec_vote', 'election'].includes(type)) questions.forEach(q => q.required = true);
 
             const res = await fetch("https://jaewondev4.pythonanywhere.com/create-survey", {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: user, code: editCode, title, questions })
+                body: JSON.stringify({ id: user, title, questions, type, voterCount }) 
             });
             const data = await res.json();
             
             if(data.success) {
-                // 저장 성공 시 모달 띄우기
-                // editCode가 있으면 수정이므로 해당 코드 사용, 없으면 새로 생성된 data.code 사용
-                const finalCode = editCode || data.code; 
-                document.getElementById('createdCode').innerText = finalCode;
+                const modal = document.getElementById('successModal');
+                const msg = document.getElementById('successMsg');
+                const display = document.getElementById('codeDisplayArea');
+                const btnExcel = document.getElementById('btnExcel');
                 
-                const m = document.getElementById('successModal');
-                m.style.display = 'flex'; 
-                setTimeout(() => m.classList.add('active'), 10);
-            } else {
-                Modal.alert("오류", "저장에 실패했습니다.");
+                if(data.tokens && data.tokens.length > 0) {
+                    generatedTokens = data.tokens;
+                    shareLink = ""; 
+                    msg.innerHTML = `총 ${data.tokens.length}개의 <strong>보안 투표 코드</strong>가 생성되었습니다.<br>이 엑셀 파일을 다운로드하여 배포하세요.`;
+                    display.innerText = data.tokens.join('\n');
+                    btnExcel.style.display = 'inline-flex';
+                } else {
+                    generatedTokens = [];
+                    shareLink = `${window.location.origin}/join.html?code=${data.code}`;
+                    msg.innerHTML = "참여 코드가 생성되었습니다.<br>아래 링크를 복사하여 공유하면 바로 참여할 수 있습니다.";
+                    display.innerHTML = `
+                        <div style="font-size:2rem; font-weight:bold; margin-bottom:10px;">${data.code}</div>
+                        <div style="font-size:0.8rem; color:#888; word-break:break-all;">${shareLink}</div>
+                    `;
+                    btnExcel.style.display = 'none';
+                }
+                
+                modal.style.display = 'flex'; 
+                setTimeout(() => modal.classList.add('active'), 10);
             }
         }
 
         function copyCode() {
-            const code = document.getElementById('createdCode').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert("코드가 복사되었습니다!");
-            });
+            const txt = shareLink ? shareLink : document.getElementById('codeDisplayArea').innerText;
+            navigator.clipboard.writeText(txt).then(() => alert("클립보드에 복사되었습니다."));
+        }
+
+        function downloadExcel() {
+            if(generatedTokens.length === 0) return;
+            const sheetData = generatedTokens.map((code, idx) => ({ "번호": idx + 1, "전체코드": code }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(sheetData);
+            ws['!cols'] = [{ wch: 8 }, { wch: 25 }];
+            XLSX.utils.book_append_sheet(wb, ws, "Codes");
+            XLSX.writeFile(wb, "Secure_Codes.xlsx");
         }
     </script>
 </body>
