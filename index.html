@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinVote</title>
+    <title>MinVote - 편리한 투표 시스템</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,7 @@
         .nav-links { list-style: none; display: flex; gap: 2.5rem; align-items: center; }
         .nav-links a { text-decoration: none; color: #555; font-size: 0.95rem; font-weight: 500; }
 
-        /* 버튼 스타일 (반원형 + 투명 배경) */
+        /* 버튼 스타일 */
         .auth-section { display: flex; align-items: center; gap: 1.2rem; }
         .login-trigger-btn, .logout-btn {
             padding: 8px 24px;
@@ -59,14 +59,13 @@
         }
         .user-info { font-size: 0.9rem; font-weight: 600; color: #333; }
 
-        /* 모달 오버레이 - 배경을 가리지 않고 블러 처리 */
+        /* 모달 오버레이 */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            /* 배경색 투명도를 매우 낮게(0.1) 설정하고 블러를 강하게(15px) 적용 */
             background: rgba(255, 255, 255, 0.1); 
             backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px); /* 사파리 지원 */
+            -webkit-backdrop-filter: blur(15px);
             display: none;
             justify-content: center;
             align-items: center;
@@ -97,10 +96,7 @@
             outline: none;
             transition: all 0.3s;
         }
-        .login-form input:focus {
-            border: 1px solid #000;
-            background-color: #fff;
-        }
+        .login-form input:focus { border: 1px solid #000; background-color: #fff; }
 
         .login-submit {
             width: 100%;
@@ -149,8 +145,8 @@
         <p class="hero-subtitle">MinVote에서 편리하게 투표를 시작해보세요</p>
     </main>
 
-    <div class="modal-overlay" id="loginModal" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
             <h2 class="elms-font">Login</h2>
             <div class="login-form">
                 <input type="text" id="userId" placeholder="아이디" autocomplete="off">
@@ -166,14 +162,26 @@
 
         window.onload = updateAuthUI;
 
-        function openModal() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'flex';
-        }
+        // 드래그로 인한 모달 닫힘 방지 로직
+        const modalOverlay = document.getElementById('loginModal');
+        modalOverlay.addEventListener('mousedown', (e) => {
+            // 클릭 시작이 overlay(배경)일 때만 닫기 후보로 등록
+            if (e.target === modalOverlay) {
+                modalOverlay.setAttribute('data-should-close', 'true');
+            } else {
+                modalOverlay.setAttribute('data-should-close', 'false');
+            }
+        });
 
-        function closeModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
+        modalOverlay.addEventListener('mouseup', (e) => {
+            // 클릭 시작과 끝이 모두 overlay일 때만 닫음
+            if (e.target === modalOverlay && modalOverlay.getAttribute('data-should-close') === 'true') {
+                closeModal();
+            }
+        });
+
+        function openModal() { modalOverlay.style.display = 'flex'; }
+        function closeModal() { modalOverlay.style.display = 'none'; }
 
         async function handleLogin() {
             const id = document.getElementById('userId').value;
@@ -190,12 +198,13 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.status === "success") {
+                // 백엔드 응답 키값 'success'에 맞춰 수정
+                if (data.success === true) {
                     localStorage.setItem('minvote_user', id);
                     updateAuthUI();
                     closeModal();
                 } else {
-                    alert("아이디 또는 비밀번호가 틀렸습니다.");
+                    alert(data.message || "로그인에 실패했습니다.");
                 }
             } catch (error) {
                 alert("서버 연결에 실패했습니다.");
