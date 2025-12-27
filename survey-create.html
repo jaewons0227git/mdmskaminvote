@@ -2,178 +2,158 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinVote - 설문조사 만들기</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #ffffff;
-            color: #333;
-        }
-
-        .elms-font {
-            font-family: 'Elms Sans', sans-serif;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        /* 공통 상단바 */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.2rem 8%;
-            border-bottom: 1px solid #f0f0f0;
-            position: sticky;
-            top: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-        }
-
-        .logo { font-size: 1.6rem; color: #000; text-decoration: none; cursor: pointer; }
-        .nav-links { list-style: none; display: flex; gap: 2.5rem; align-items: center; }
-        .nav-links a { text-decoration: none; color: #555; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: color 0.2s; }
-        .nav-links a:hover { color: #000; }
-
-        .auth-section { display: flex; align-items: center; gap: 1.2rem; }
-        .logout-btn, .login-trigger-btn {
-            padding: 8px 24px;
-            background: transparent;
-            color: #000;
-            border: 1px solid #000;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        /* 설문 생성 폼 스타일 */
-        .container {
-            max-width: 700px;
-            margin: 60px auto;
-            padding: 0 20px;
-        }
-
-        .survey-form-card {
-            background: #fff;
-            padding: 40px;
-            border-radius: 30px;
-            border: 1px solid #eee;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
-        }
-
-        h2 { margin-bottom: 30px; text-align: center; font-size: 2rem; }
-
-        .input-group { margin-bottom: 25px; }
-        .input-group label { display: block; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; color: #666; }
-        
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 16px 20px;
-            border: 1px solid #eee;
-            border-radius: 15px;
-            background: #f9f9f9;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        input:focus { border-color: #000; background: #fff; }
-
-        .add-option-btn {
-            background: none;
-            border: 1px dashed #ccc;
-            width: 100%;
-            padding: 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            color: #888;
-            margin-top: 10px;
-            transition: all 0.2s;
-        }
-
-        .add-option-btn:hover { border-color: #000; color: #000; }
-
-        .submit-survey-btn {
-            width: 100%;
-            padding: 18px;
-            background: #000;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 30px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .submit-survey-btn:hover { transform: scale(1.02); }
-    </style>
+    <title>MinVote - 설문 관리</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
-
     <nav class="navbar">
         <a href="index.html" class="logo elms-font">MinVote</a>
         <ul class="nav-links">
-            <li><a href="index.html">투표만들기</a></li>
-            <li><a href="#">전자투표</a></li>
+            <li><a href="dashboard.html">대시보드</a></li>
             <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="join.html">설문참여</a></li>
         </ul>
-        <div class="auth-section" id="auth-section"></div>
+        <div id="auth-section"></div>
     </nav>
 
-    <div class="container">
-        <div class="survey-form-card">
-            <h2 class="elms-font">Create Survey</h2>
-            <div class="input-group">
-                <label>설문 제목</label>
-                <input type="text" placeholder="예: 서비스 이용 만족도 조사">
+    <div style="max-width: 800px; margin: 60px auto; padding: 0 20px;">
+        <h2 id="pageTitle" class="elms-font" style="font-size: 2.5rem; margin-bottom: 10px;">Create Survey</h2>
+        <p style="color:#888; margin-bottom:40px;">문항을 드래그하여 순서를 바꿀 수 있습니다.</p>
+        
+        <input type="text" id="surveyTitle" placeholder="설문 제목을 입력하세요" style="font-size: 1.8rem; border:none; border-bottom: 2px solid #eee; background:none; border-radius:0; margin-bottom:40px;">
+        
+        <div id="questions-list"></div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-pill" onclick="addQuestion('text')">+ 단답형 추가</button>
+            <button class="btn-pill" onclick="addQuestion('choice')">+ 객관식 추가</button>
+        </div>
+
+        <button class="btn-pill btn-black" style="width: 100%; margin-top: 50px; padding: 20px;" onclick="saveSurvey()">설문 저장하기</button>
+    </div>
+
+    <div id="successModal" class="custom-modal">
+        <div class="modal-box">
+            <h3 class="elms-font" style="font-size:2rem; margin-bottom:10px;">Success!</h3>
+            <p style="color:#666; margin-bottom:20px;">설문이 생성되었습니다.<br>참여자들에게 아래 코드를 공유하세요.</p>
+            
+            <div style="background:#f5f5f5; padding:20px; border-radius:15px; margin-bottom:20px; border:2px dashed #ccc;">
+                <span id="createdCode" style="font-size:2.5rem; font-weight:800; letter-spacing: 5px;"></span>
             </div>
-            <div class="input-group">
-                <label>설문 설명</label>
-                <textarea rows="3" placeholder="설문에 대한 간단한 설명을 입력하세요"></textarea>
+            
+            <button class="btn-pill" style="margin-bottom:20px;" onclick="copyCode()">📋 코드 복사하기</button>
+
+            <div class="modal-btns">
+                <button class="btn-pill btn-black" style="width:100%" onclick="location.href='dashboard.html'">확인 (대시보드로 이동)</button>
             </div>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-            <div id="options-container">
-                <label style="display: block; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; color: #666;">질문 항목</label>
-                <input type="text" placeholder="항목 1" style="margin-bottom: 10px;">
-                <input type="text" placeholder="항목 2" style="margin-bottom: 10px;">
-            </div>
-            <button class="add-option-btn">+ 항목 추가</button>
-            <button class="submit-survey-btn">설문 등록하기</button>
         </div>
     </div>
 
+    <script src="modal.js"></script>
     <script>
-        window.onload = function() {
-            updateAuthUI();
+        let questions = [];
+        const user = localStorage.getItem('minvote_user');
+        const urlParams = new URLSearchParams(window.location.search);
+        const editCode = urlParams.get('edit');
+
+        // 드래그 앤 드롭
+        const el = document.getElementById('questions-list');
+        Sortable.create(el, {
+            animation: 150, handle: '.q-card',
+            onEnd: function() {
+                const newOrder = [];
+                document.querySelectorAll('.q-card').forEach(card => newOrder.push(questions[card.dataset.index]));
+                questions = newOrder; render();
+            }
+        });
+
+        window.onload = async () => {
+            if(!user) location.href = 'index.html';
+            if(editCode) {
+                document.getElementById('pageTitle').innerText = "Edit Survey";
+                const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-survey?code=${editCode}`);
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('surveyTitle').value = data.survey.title;
+                    questions = data.survey.questions;
+                    render();
+                }
+            }
+            document.getElementById('auth-section').innerHTML = `<span style="font-weight:700;">${user}님</span>`;
         };
 
-        function handleLogout() {
-            localStorage.removeItem('minvote_user');
-            location.href = 'index.html'; // 로그아웃 시 홈으로 이동
+        function addQuestion(type) {
+            questions.push({ type, title: '', options: type === 'choice' ? ['', ''] : [], required: false });
+            render();
         }
 
-        function updateAuthUI() {
-            const authSection = document.getElementById('auth-section');
-            const user = localStorage.getItem('minvote_user');
-            if (user) {
-                authSection.innerHTML = `
-                    <span style="font-size:0.9rem; font-weight:600;">${user}님</span>
-                    <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+        function render() {
+            const list = document.getElementById('questions-list');
+            list.innerHTML = '';
+            questions.forEach((q, i) => {
+                const div = document.createElement('div');
+                div.className = 'q-card';
+                div.dataset.index = i;
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; color:#888; font-weight:bold;">☰ 문항 ${i+1}</span>
+                        <button onclick="removeQuestion(${i})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-size:0.8rem;">삭제</button>
+                    </div>
+                    <input type="text" placeholder="질문을 입력하세요" value="${q.title}" oninput="questions[${i}].title=this.value">
+                    ${q.type === 'choice' ? `
+                        <div style="margin-top:10px; padding-left:20px;">
+                            ${q.options.map((opt, oi) => `
+                                <input type="text" value="${opt}" oninput="questions[${i}].options[${oi}]=this.value" style="width:80%; font-size:0.85rem; margin-bottom:5px;" placeholder="옵션 ${oi+1}">
+                            `).join('')}
+                            <button class="btn-pill" style="font-size:0.7rem; padding:4px 12px; margin-top:5px;" onclick="questions[${i}].options.push(''); render()">+ 옵션 추가</button>
+                        </div>
+                    ` : ''}
+                    <div style="margin-top:15px; border-top:1px solid #f9f9f9; padding-top:10px;">
+                        <label style="font-size:0.85rem; cursor:pointer;">
+                            <input type="checkbox" ${q.required ? 'checked' : ''} onchange="questions[${i}].required=this.checked"> 필수 답변 설정
+                        </label>
+                    </div>
                 `;
+                list.appendChild(div);
+            });
+        }
+
+        function removeQuestion(i) {
+            questions.splice(i, 1);
+            render();
+        }
+
+        async function saveSurvey() {
+            const title = document.getElementById('surveyTitle').value;
+            if(!title) return Modal.alert("오류", "설문 제목을 입력해주세요.");
+            if(questions.length === 0) return Modal.alert("오류", "최소 1개 이상의 질문을 생성해주세요.");
+
+            const res = await fetch("https://jaewondev4.pythonanywhere.com/create-survey", {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: user, code: editCode, title, questions })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                // 저장 성공 시 모달 띄우기
+                // editCode가 있으면 수정이므로 해당 코드 사용, 없으면 새로 생성된 data.code 사용
+                const finalCode = editCode || data.code; 
+                document.getElementById('createdCode').innerText = finalCode;
+                
+                const m = document.getElementById('successModal');
+                m.style.display = 'flex'; 
+                setTimeout(() => m.classList.add('active'), 10);
             } else {
-                // 로그인 안되어있을 경우 홈으로 돌려보내거나 로그인 유도
-                alert("로그인이 필요한 서비스입니다.");
-                location.href = 'index.html';
+                Modal.alert("오류", "저장에 실패했습니다.");
             }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('createdCode').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("코드가 복사되었습니다!");
+            });
         }
     </script>
 </body>

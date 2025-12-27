@@ -2,256 +2,70 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinVote - 편리한 투표 시스템</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-
-    <style>
-        /* 기본 초기화 */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #ffffff;
-            color: #333;
-            overflow-x: hidden;
-        }
-
-        .elms-font {
-            font-family: 'Elms Sans', sans-serif;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        /* 상단바 스타일 */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.2rem 8%;
-            border-bottom: 1px solid #f0f0f0;
-            position: sticky;
-            top: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-        }
-
-        .logo { font-size: 1.6rem; color: #000; text-decoration: none; cursor: pointer; }
-        
-        .nav-links { list-style: none; display: flex; gap: 2.5rem; align-items: center; }
-        .nav-links a { 
-            text-decoration: none; 
-            color: #555; 
-            font-size: 0.95rem; 
-            font-weight: 500; 
-            transition: color 0.2s; 
-        }
-        .nav-links a:hover { color: #000; }
-
-        /* 인증 섹션 및 반원형 버튼 */
-        .auth-section { display: flex; align-items: center; gap: 1.2rem; }
-        .login-trigger-btn, .logout-btn {
-            padding: 8px 24px;
-            background: transparent;
-            color: #000;
-            border: 1px solid #000;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-        .login-trigger-btn:hover, .logout-btn:hover {
-            background: #000;
-            color: #fff;
-        }
-        .user-info { font-size: 0.9rem; font-weight: 600; color: #333; }
-
-        /* 중앙 메인 콘텐츠 */
-        .hero-section {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: calc(100vh - 80px);
-            text-align: center;
-            padding: 0 20px;
-        }
-        .hero-brand { font-size: 3.5rem; color: #111; margin-bottom: 0.5rem; }
-        .hero-title { font-size: 2.2rem; font-weight: 700; color: #111; }
-        .hero-subtitle { font-size: 1.1rem; color: #888; margin-top: 10px; }
-
-        /* 모던 모달 (블러 배경) */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        .modal-content {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 3.5rem 2.5rem;
-            border-radius: 35px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.08);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .modal-content h2 { font-size: 2.2rem; margin-bottom: 2rem; color: #000; }
-
-        /* 입력창 디자인 */
-        .login-form input {
-            width: 100%;
-            padding: 16px 22px;
-            margin-bottom: 15px;
-            border: 1px solid #eee;
-            border-radius: 20px;
-            background-color: rgba(245, 245, 245, 0.8);
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s;
-        }
-        .login-form input:focus { border: 1px solid #000; background-color: #fff; }
-
-        .login-submit {
-            width: 100%;
-            padding: 16px;
-            margin-top: 10px;
-            background: transparent;
-            color: #000;
-            border: 1px solid #000;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        .login-submit:hover { background: #000; color: #fff; }
-
-        /* 모바일 대응 */
-        @media (max-width: 768px) {
-            .navbar { padding: 1rem 5%; }
-            .nav-links { display: none; }
-            .hero-brand { font-size: 2.5rem; }
-            .hero-title { font-size: 1.6rem; }
-        }
-    </style>
+    <title>MinVote - Home</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <nav class="navbar">
         <a href="index.html" class="logo elms-font">MinVote</a>
         <ul class="nav-links">
-            <li><a href="index.html">투표만들기</a></li>
-            <li><a href="#">전자투표</a></li>
+            <li><a href="dashboard.html">대시보드</a></li>
             <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="join.html">설문참여</a></li>
         </ul>
-        <div class="auth-section" id="auth-section">
-            </div>
+        <div id="auth-section"></div>
     </nav>
 
-    <main class="hero-section">
-        <div class="hero-title-container">
-            <span class="hero-brand elms-font">MinVote</span>
-            <h1 class="hero-title">방문을 환영합니다</h1>
+    <main style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 80vh; text-align: center; padding: 0 20px;">
+        <h1 class="elms-font" style="font-size: 4.5rem; letter-spacing: -2px;">MinVote</h1>
+        <p style="font-size: 1.2rem; color: #888; margin-top: 10px;">세련된 방식으로 의견을 모으세요.</p>
+        <div style="margin-top: 40px; display: flex; gap: 15px;">
+            <a href="survey-create.html" class="btn-pill btn-black" style="padding: 15px 40px;">시작하기</a>
+            <a href="join.html" class="btn-pill" style="padding: 15px 40px;">설문 참여</a>
         </div>
-        <p class="hero-subtitle">MinVote에서 편리하게 투표를 시작해보세요</p>
     </main>
 
-    <div class="modal-overlay" id="loginModal">
-        <div class="modal-content">
-            <h2 class="elms-font">Login</h2>
-            <div class="login-form">
-                <input type="text" id="userId" placeholder="아이디" autocomplete="off">
-                <input type="password" id="userPw" placeholder="비밀번호">
-                <button class="login-submit" onclick="handleLogin()">로그인</button>
+    <div id="loginModal" class="custom-modal">
+        <div class="modal-box">
+            <h3 class="elms-font" style="margin-bottom: 20px;">Login</h3>
+            <input type="text" id="userId" placeholder="아이디">
+            <input type="password" id="userPw" placeholder="비밀번호">
+            <div class="modal-btns">
+                <button class="btn-pill btn-black" style="width: 100%;" onclick="handleLogin()">로그인</button>
             </div>
-            <p onclick="closeModal()" style="margin-top: 25px; color: #bbb; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.5px;">CLOSE</p>
+            <p style="margin-top:20px; cursor:pointer; font-size:0.8rem; color:#aaa;" onclick="toggleLoginModal(false)">닫기</p>
         </div>
     </div>
 
+    <script src="modal.js"></script>
     <script>
-        const API_URL = "https://jaewondev2.pythonanywhere.com/check-access";
-        const modalOverlay = document.getElementById('loginModal');
+        function toggleLoginModal(show) {
+            const m = document.getElementById('loginModal');
+            if(show) { m.style.display = 'flex'; setTimeout(()=>m.classList.add('active'),10); }
+            else { m.classList.remove('active'); setTimeout(()=>m.style.display='none',300); }
+        }
 
-        window.onload = updateAuthUI;
-
-        /* --- 드래그 시 모달 닫힘 방지 로직 --- */
-        modalOverlay.addEventListener('mousedown', (e) => {
-            if (e.target === modalOverlay) {
-                modalOverlay.setAttribute('data-should-close', 'true');
-            } else {
-                modalOverlay.setAttribute('data-should-close', 'false');
-            }
-        });
-
-        modalOverlay.addEventListener('mouseup', (e) => {
-            if (e.target === modalOverlay && modalOverlay.getAttribute('data-should-close') === 'true') {
-                closeModal();
-            }
-        });
-
-        function openModal() { modalOverlay.style.display = 'flex'; }
-        function closeModal() { modalOverlay.style.display = 'none'; }
-
-        /* --- 로그인 처리 --- */
         async function handleLogin() {
             const id = document.getElementById('userId').value;
             const pw = document.getElementById('userPw').value;
-
-            if(!id || !pw) { alert("정보를 모두 입력해주세요."); return; }
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, password: pw })
-                });
-
-                const data = await response.json();
-
-                // 백엔드 응답 success: True 조건 확인
-                if (data.success === true) {
-                    localStorage.setItem('minvote_user', id);
-                    updateAuthUI();
-                    closeModal();
-                } else {
-                    alert(data.message || "아이디 또는 비밀번호가 틀렸습니다.");
-                }
-            } catch (error) {
-                alert("서버 연결에 실패했습니다.");
-            }
+            const res = await fetch("https://jaewondev2.pythonanywhere.com/check-access", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, password: pw })
+            });
+            const data = await res.json();
+            if(data.success) {
+                localStorage.setItem('minvote_user', id);
+                location.reload();
+            } else { await Modal.alert("로그인 실패", "아이디 또는 비밀번호가 틀렸습니다."); }
         }
 
-        /* --- 로그아웃 처리 --- */
-        function handleLogout() {
-            localStorage.removeItem('minvote_user');
-            updateAuthUI();
-        }
-
-        /* --- 로그인 상태에 따른 UI 업데이트 --- */
-        function updateAuthUI() {
-            const authSection = document.getElementById('auth-section');
-            const user = localStorage.getItem('minvote_user');
-            
-            if (user) {
-                authSection.innerHTML = `
-                    <span class="user-info elms-font">${user}님</span>
-                    <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
-                `;
-            } else {
-                authSection.innerHTML = `
-                    <button class="login-trigger-btn" onclick="openModal()">로그인</button>
-                `;
-            }
+        const user = localStorage.getItem('minvote_user');
+        const authSec = document.getElementById('auth-section');
+        if(user) {
+            authSec.innerHTML = `<span style="font-weight:700; margin-right:15px;">${user}님</span><button class="btn-pill" onclick="localStorage.removeItem('minvote_user'); location.reload();">Logout</button>`;
+        } else {
+            authSec.innerHTML = `<button class="btn-pill" onclick="toggleLoginModal(true)">Login</button>`;
         }
     </script>
 </body>

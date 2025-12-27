@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>MinVote - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo elms-font">MinVote</a>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">대시보드</a></li>
+            <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="join.html">설문참여</a></li>
+        </ul>
+        <div id="auth-section"></div>
+    </nav>
+
+    <div style="padding: 60px 8%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 40px;">
+            <h1 class="elms-font" style="font-size: 2.5rem;">My Dashboard</h1>
+            <a href="survey-create.html" class="btn-pill btn-black">+ 새 설문 만들기</a>
+        </div>
+        <div id="survey-list"></div>
+    </div>
+
+    <div id="statsModal" class="custom-modal">
+        <div class="modal-box" style="max-width: 700px; text-align: left; max-height: 80vh; overflow-y: auto;">
+            <h3 id="statsTitle" style="font-size:1.5rem; margin-bottom:10px;">설문 통계</h3>
+            <p id="totalCount" style="color:#666; margin-bottom:20px;"></p>
+            <div id="statsContent"></div>
+            <button class="btn-pill btn-black" style="width:100%; margin-top:30px;" onclick="closeStats()">닫기</button>
+        </div>
+    </div>
+
+    <script src="modal.js"></script>
+    <script>
+        const user = localStorage.getItem('minvote_user');
+        if(!user) location.href = 'index.html';
+
+        async function load() {
+            const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-dashboard?id=${user}`);
+            const data = await res.json();
+            const list = document.getElementById('survey-list');
+            
+            if(data.surveys.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:#888; padding:50px;">아직 생성된 설문이 없습니다.</div>`;
+                return;
+            }
+
+            list.innerHTML = data.surveys.map(s => `
+                <div class="dash-card">
+                    <div>
+                        <div style="margin-bottom:8px;">
+                            <span style="font-size:0.75rem; color:${s.status === 'open' ? '#2ecc71' : '#e74c3c'}; font-weight:700; border:1px solid ${s.status === 'open' ? '#2ecc71' : '#e74c3c'}; padding:2px 8px; border-radius:10px;">
+                                ${s.status === 'open' ? '진행중' : '마감됨'}
+                            </span>
+                        </div>
+                        <h3 style="margin:0 0 5px 0; font-size:1.5rem;">${s.title}</h3>
+                        <p style="color:#888; font-size:0.95rem;">참여 코드: <strong style="color:#000; font-size:1.1rem;">${s.code}</strong></p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-pill" onclick="showStats('${s.code}', '${s.title}')">통계</button>
+                        <button class="btn-pill" onclick="location.href='survey-create.html?edit=${s.code}'">수정</button>
+                        <button class="btn-pill" onclick="toggleStatus('${s.code}')">${s.status === 'open' ? '마감' : '재개'}</button>
+                        <button class="btn-pill" onclick="deleteS('${s.code}')" style="color:#e74c3c; border-color:#e74c3c;">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleStatus(code) {
+            if(await Modal.confirm("상태 변경", "설문 상태를 변경하시겠습니까?")) {
+                const res = await fetch("https://jaewondev4.pythonanywhere.com/toggle-status", {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: user, code })
+                });
+                const data = await res.json();
+                if(data.success) { load(); await Modal.alert("성공", "상태가 업데이트되었습니다."); }
+            }
+        }
+
+        async function deleteS(code) {
+            if(await Modal.confirm("삭제", "정말 삭제하시겠습니까? 응답 데이터가 영구적으로 삭제됩니다.")) {
+                await fetch("https://jaewondev4.pythonanywhere.com/delete-survey", {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id: user, code })
+                });
+                load();
+            }
+        }
+
+        async function showStats(code, title) {
+            const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-stats?code=${code}&id=${user}`);
+            const result = await res.json();
+            document.getElementById('statsTitle').innerText = title;
+            document.getElementById('totalCount').innerText = `총 응답 수: ${result.total}명`;
+            const content = document.getElementById('statsContent');
+            content.innerHTML = '';
+            
+            result.stats.forEach((s, idx) => {
+                const div = document.createElement('div');
+                div.style.marginTop = '25px';
+                div.innerHTML = `<strong style="font-size:1.1rem;">Q${idx+1}. ${s.title}</strong>`;
+                if(s.type === 'choice') {
+                    const canvas = document.createElement('canvas');
+                    canvas.style.marginTop = "10px";
+                    div.appendChild(canvas);
+                    new Chart(canvas, { 
+                        type: 'bar', 
+                        data: { 
+                            labels: Object.keys(s.data), 
+                            datasets: [{ label: '득표 수', data: Object.values(s.data), backgroundColor: '#111', borderRadius: 5 }] 
+                        },
+                        options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                } else {
+                    div.innerHTML += `<div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-top:10px; font-size:0.9rem; line-height:1.6; max-height:200px; overflow-y:auto;">${s.data.length ? s.data.join('<hr style="border:0; border-top:1px solid #eee; margin:10px 0;">') : '<span style="color:#aaa">응답 없음</span>'}</div>`;
+                }
+                content.appendChild(div);
+            });
+            const m = document.getElementById('statsModal');
+            m.style.display = 'flex'; setTimeout(()=>m.classList.add('active'),10);
+        }
+
+        function closeStats() {
+            const m = document.getElementById('statsModal');
+            m.classList.remove('active'); setTimeout(()=>m.style.display='none',300);
+        }
+
+        load();
+        document.getElementById('auth-section').innerHTML = `<span style="font-weight:700;">${user}님</span>`;
+    </script>
+</body>
+</html>

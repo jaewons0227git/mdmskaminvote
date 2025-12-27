@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>MinVote - 참여하기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo elms-font">MinVote</a>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">대시보드</a></li>
+            <li><a href="survey-create.html">설문조사</a></li>
+            <li><a href="join.html">설문참여</a></li>
+        </ul>
+        <div id="auth-section"></div>
+    </nav>
+
+    <div id="join-box" style="max-width:450px; margin: 100px auto; text-align:center; padding: 0 20px;">
+        <h1 class="elms-font" style="font-size:3rem; margin-bottom:10px;">Join Survey</h1>
+        <p style="color:#888; margin-bottom:40px;">전달받은 코드를 입력하고 설문에 참여하세요.</p>
+        <input type="text" id="joinCode" placeholder="ABC123" maxlength="6" style="font-size:1.8rem; text-align:center; padding:20px; border:2px solid #000; letter-spacing: 2px; text-transform: uppercase;">
+        <button class="btn-pill btn-black" style="width:100%; margin-top:20px; padding:20px;" onclick="join()">입장하기</button>
+    </div>
+
+    <div id="survey-box" style="display:none; max-width:700px; margin: 60px auto; padding: 0 20px;">
+        <h2 id="sTitle" class="elms-font" style="font-size:2.5rem; margin-bottom:40px;"></h2>
+        <div id="sQuestions"></div>
+        <button class="btn-pill btn-black" style="width:100%; margin-top:40px; padding:20px;" onclick="submit()">답변 제출하기</button>
+    </div>
+
+    <script src="modal.js"></script>
+    <script>
+        // auth-section 처리를 위해 간단한 스크립트 추가
+        const user = localStorage.getItem('minvote_user');
+        const authSec = document.getElementById('auth-section');
+        if(user) {
+            authSec.innerHTML = `<span style="font-weight:700;">${user}님</span>`;
+        } else {
+            authSec.innerHTML = `<button class="btn-pill" onclick="location.href='index.html'">Login</button>`;
+        }
+
+        let currentS = null;
+        let code = "";
+        
+        async function join() {
+            code = document.getElementById('joinCode').value.toUpperCase();
+            if(!code) return Modal.alert("오류", "코드를 입력해주세요.");
+            const res = await fetch(`https://jaewondev4.pythonanywhere.com/get-survey?code=${code}`);
+            const data = await res.json();
+            if(data.success) {
+                if(data.survey.status === 'closed') return Modal.alert("마감됨", "이 설문조사는 이미 마감되었습니다.");
+                currentS = data.survey;
+                document.getElementById('join-box').style.display = 'none';
+                document.getElementById('survey-box').style.display = 'block';
+                document.getElementById('sTitle').innerText = currentS.title;
+                const container = document.getElementById('sQuestions');
+                container.innerHTML = '';
+                currentS.questions.forEach((q, i) => {
+                    container.innerHTML += `
+                        <div style="background:#fff; border:1px solid #eee; padding:25px; border-radius:20px; margin-bottom:20px;">
+                            <p style="font-weight:700; font-size:1.1rem; margin-bottom:15px;">Q${i+1}. ${q.title} ${q.required ? '<span style="color:#e74c3c;">*</span>' : ''}</p>
+                            ${q.type === 'text' ? `<input type="text" class="ans" placeholder="답변을 입력하세요">` : 
+                            q.options.map(opt => `<label style="display:block; margin-top:10px; cursor:pointer; padding:10px; border-radius:8px; border:1px solid #f0f0f0;"><input type="radio" name="q${i}" value="${opt}" style="margin-right:10px;"> ${opt}</label>`).join('')}
+                        </div>`;
+                });
+            } else { await Modal.alert("오류", "존재하지 않는 코드입니다."); }
+        }
+
+        async function submit() {
+            let answers = [];
+            for(let i=0; i<currentS.questions.length; i++) {
+                const q = currentS.questions[i];
+                let val = "";
+                if(q.type === 'text') val = document.querySelectorAll('.ans')[i]?.value || "";
+                else {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    val = sel ? sel.value : "";
+                }
+                if(q.required && !val) return Modal.alert("미입력", `'${q.title}'은 필수 항목입니다.`);
+                answers.push(val);
+            }
+            const res = await fetch("https://jaewondev4.pythonanywhere.com/submit-response", {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code, answers, timestamp: new Date().toISOString() })
+            });
+            const data = await res.json();
+            if(data.success) { await Modal.alert("감사합니다", "설문 답변이 제출되었습니다."); location.href="index.html"; }
+        }
+    </script>
+</body>
+</html>

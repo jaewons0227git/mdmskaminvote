@@ -1,0 +1,44 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Pretendard', sans-serif; background: #fcfcfc; color: #111; line-height: 1.6; }
+.elms-font { font-family: 'Elms Sans', sans-serif; font-weight: 300; }
+
+/* Navbar */
+.navbar { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 8%; border-bottom: 1px solid #f0f0f0; background: rgba(255,255,255,0.8); backdrop-filter: blur(15px); position: sticky; top:0; z-index:1000; }
+.logo { font-size: 1.6rem; color: #000; text-decoration: none; font-weight: 700; letter-spacing: -1px; }
+.nav-links { list-style: none; display: flex; gap: 2.5rem; }
+.nav-links a { text-decoration: none; color: #666; font-size: 0.95rem; font-weight: 500; transition: 0.2s; }
+.nav-links a:hover { color: #000; }
+
+/* Button */
+.btn-pill { padding: 10px 24px; border: 1px solid #000; border-radius: 50px; background: transparent; cursor: pointer; transition: 0.3s; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #000; }
+.btn-pill:hover { background: #000; color: #fff; }
+.btn-black { background: #000 !important; color: #fff !important; }
+
+/* Modal */
+.custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 9999; opacity: 0; transition: opacity 0.3s; }
+.custom-modal.active { display: flex; opacity: 1; }
+.modal-box { background: #fff; padding: 40px; border-radius: 30px; width: 90%; max-width: 450px; text-align: center; transform: translateY(20px); transition: transform 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.custom-modal.active .modal-box { transform: translateY(0); }
+.modal-btns { display: flex; gap: 10px; margin-top: 25px; }
+
+/* Survey Card (Create Page) */
+.q-card { background: #fff; border: 1px solid #eee; padding: 25px; border-radius: 20px; margin-bottom: 15px; cursor: grab; transition: 0.2s; position: relative; }
+.q-card:active { cursor: grabbing; }
+.q-card:hover { border-color: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+.handle { display: inline-block; margin-right: 10px; color: #ccc; cursor: grab; }
+
+/* Dashboard Card (New) */
+.dash-card { background: #fff; border: 1px solid #ddd; border-radius: 20px; padding: 30px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: 0.2s; }
+.dash-card:hover { border-color: #000; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+
+/* Inputs */
+input[type="text"], input[type="password"] { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #eee; background: #f9f9f9; outline: none; margin-top: 8px; }
+input:focus { border-color: #000; background: #fff; }
+
+@media (max-width: 768px) {
+    .dash-card { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .dash-card > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 5px; }
+    .nav-links { display: none; } /* Mobile Menu 생략 (요청 사항 집중) */
+}
