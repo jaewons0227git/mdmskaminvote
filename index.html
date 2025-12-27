@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinVote</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        .elms-font {
+            font-family: 'Elms Sans', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        /* 상단바 */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 8%;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .logo { font-size: 1.6rem; color: #000; text-decoration: none; }
+        .nav-links { list-style: none; display: flex; gap: 2.5rem; align-items: center; }
+        .nav-links a { text-decoration: none; color: #555; font-size: 0.95rem; font-weight: 500; }
+
+        /* 버튼 스타일 (반원형 + 투명 배경) */
+        .auth-section { display: flex; align-items: center; gap: 1.2rem; }
+        .login-trigger-btn, .logout-btn {
+            padding: 8px 24px;
+            background: transparent;
+            color: #000;
+            border: 1px solid #000;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .login-trigger-btn:hover, .logout-btn:hover {
+            background: #000;
+            color: #fff;
+        }
+        .user-info { font-size: 0.9rem; font-weight: 600; color: #333; }
+
+        /* 모달 오버레이 - 배경을 가리지 않고 블러 처리 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* 배경색 투명도를 매우 낮게(0.1) 설정하고 블러를 강하게(15px) 적용 */
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); /* 사파리 지원 */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 3.5rem 2.5rem;
+            border-radius: 35px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.08);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-content h2 { font-size: 2.2rem; margin-bottom: 2rem; color: #000; }
+
+        .login-form input {
+            width: 100%;
+            padding: 16px 22px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 20px;
+            background-color: rgba(245, 245, 245, 0.8);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .login-form input:focus {
+            border: 1px solid #000;
+            background-color: #fff;
+        }
+
+        .login-submit {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            background: transparent;
+            color: #000;
+            border: 1px solid #000;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        .login-submit:hover { background: #000; color: #fff; }
+
+        /* 중앙 메인 콘텐츠 */
+        .hero-section {
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; height: calc(100vh - 80px); text-align: center;
+        }
+        .hero-brand { font-size: 3.5rem; color: #111; margin-bottom: 0.5rem; }
+        .hero-title { font-size: 2.2rem; font-weight: 700; color: #111; }
+        .hero-subtitle { font-size: 1.1rem; color: #888; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="#" class="logo elms-font">MinVote</a>
+        <ul class="nav-links">
+            <li><a href="#">투표만들기</a></li>
+            <li><a href="#">전자투표</a></li>
+            <li><a href="#">설문조사</a></li>
+        </ul>
+        <div class="auth-section" id="auth-section">
+            <button class="login-trigger-btn" onclick="openModal()">로그인</button>
+        </div>
+    </nav>
+
+    <main class="hero-section">
+        <div class="hero-title-container">
+            <span class="hero-brand elms-font">MinVote</span>
+            <h1 class="hero-title">방문을 환영합니다</h1>
+        </div>
+        <p class="hero-subtitle">MinVote에서 편리하게 투표를 시작해보세요</p>
+    </main>
+
+    <div class="modal-overlay" id="loginModal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 class="elms-font">Login</h2>
+            <div class="login-form">
+                <input type="text" id="userId" placeholder="아이디" autocomplete="off">
+                <input type="password" id="userPw" placeholder="비밀번호">
+                <button class="login-submit" onclick="handleLogin()">로그인</button>
+            </div>
+            <p onclick="closeModal()" style="margin-top: 25px; color: #bbb; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.5px;">CLOSE</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://jaewondev2.pythonanywhere.com/check-access";
+
+        window.onload = updateAuthUI;
+
+        function openModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        async function handleLogin() {
+            const id = document.getElementById('userId').value;
+            const pw = document.getElementById('userPw').value;
+
+            if(!id || !pw) { alert("아이디와 비밀번호를 입력해주세요."); return; }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, password: pw })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === "success") {
+                    localStorage.setItem('minvote_user', id);
+                    updateAuthUI();
+                    closeModal();
+                } else {
+                    alert("아이디 또는 비밀번호가 틀렸습니다.");
+                }
+            } catch (error) {
+                alert("서버 연결에 실패했습니다.");
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('minvote_user');
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            const user = localStorage.getItem('minvote_user');
+            if (user) {
+                authSection.innerHTML = `
+                    <span class="user-info elms-font">${user}님</span>
+                    <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+                `;
+            } else {
+                authSection.innerHTML = `<button class="login-trigger-btn" onclick="openModal()">로그인</button>`;
+            }
+        }
+    </script>
+</body>
+</html>
